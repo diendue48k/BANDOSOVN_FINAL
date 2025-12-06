@@ -1,0 +1,7 @@
+{
+  "name": "Vietnam Historical Map",
+  "description": "An interactive web application displaying a historical map of Vietnam, leveraging a PostgreSQL database with PostGIS and a React frontend with Leaflet and OpenStreetMap. Users can explore historical sites, view details, and filter locations.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
