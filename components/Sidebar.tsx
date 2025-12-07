@@ -8,7 +8,9 @@ import {
   ChevronRightIcon, 
   MenuIcon,
   GlobeAltIcon,
-  SearchIcon
+  SearchIcon,
+  ChevronUpIcon,
+  ChevronDownIcon
 } from './Icons';
 
 interface SidebarProps {
@@ -66,21 +68,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
   
   // Calculate mobile height class
+  // Adjusted 'full' height to leave space for the top Search Bar (~170px clearance)
   const getMobileHeightClass = () => {
       switch(mobileSheetState) {
-          case 'collapsed': return 'h-7'; // Rất thấp, chỉ hiện thanh handle
+          case 'collapsed': return 'h-12'; 
           case 'half': return 'h-[50vh]';
-          case 'full': return 'h-[92vh]';
+          case 'full': return 'h-[calc(100vh-170px)]';
       }
   };
 
-  // Mobile sheet toggle handler
+  // Mobile sheet toggle handler (Cycle: Collapsed -> Half -> Full -> Collapsed)
   const handleToggleSheet = () => {
       if (mobileSheetState === 'collapsed') setMobileSheetState('half');
-      else if (mobileSheetState === 'half') setMobileSheetState('collapsed');
+      else if (mobileSheetState === 'half') setMobileSheetState('full');
       else setMobileSheetState('collapsed');
   };
-
+  
   // Scroll selected item into view on change
   useEffect(() => {
     if (selectedItem && listRef.current) {
@@ -110,7 +113,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 bg-slate-950/95 backdrop-blur-xl 
                 border-t border-slate-700 md:border-t-0 md:border-r md:border-slate-800
                 text-slate-200 
-                z-[20] /* Giảm z-index để thấp hơn SiteDetailPopup (z-30) */
+                /* Fixed z-index to 40 so it stays below Search Bar (z-50) */
+                z-[40]
                 transition-all duration-500 cubic-bezier(0.25, 1, 0.5, 1)
                 shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.5)] md:shadow-none
                 flex flex-col
@@ -128,10 +132,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
             {/* --- Mobile Drag Handle --- */}
             <div 
-                className="md:hidden w-full flex items-center justify-center h-7 cursor-pointer flex-shrink-0 hover:bg-white/5 transition-colors bg-slate-900 border-b border-slate-800 active:bg-slate-800"
+                className="md:hidden w-full flex items-center justify-center h-12 cursor-pointer flex-shrink-0 hover:bg-white/5 transition-colors bg-slate-900 border-b border-slate-800 active:bg-slate-800 relative group"
                 onClick={handleToggleSheet}
             >
-                <div className="w-10 h-1 bg-slate-600 rounded-full"></div>
+                <div className="w-12 h-1.5 bg-slate-600 rounded-full group-hover:bg-slate-500 transition-colors"></div>
+                {/* Visual Hint for Expand/Collapse - Single Control */}
+                <div className="absolute right-4 text-slate-500">
+                     {mobileSheetState === 'full' ? <ChevronDownIcon className="w-4 h-4"/> : <ChevronUpIcon className="w-4 h-4" />}
+                </div>
             </div>
 
             {/* --- Header Section --- */}
@@ -140,12 +148,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-sky-500/5 to-transparent pointer-events-none"></div>
 
                 <div className="relative flex justify-between items-start">
-                    {/* HIDDEN ON MOBILE to prevent duplication with top header */}
-                    <div className="hidden md:flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 flex items-center justify-center shadow-lg group">
+                    {/* HIDDEN ON MOBILE to prevent duplication with top header - BUT we might want context in 'full' mode */}
+                    <div className="flex items-center gap-3">
+                        <div className="hidden md:flex w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 items-center justify-center shadow-lg group">
                             <GlobeAltIcon className="w-6 h-6 text-sky-500 group-hover:scale-110 transition-transform duration-500" />
                         </div>
-                        <div>
+                        <div className="hidden md:block">
                             <h1 className="text-lg font-black text-white - 800 tracking-tight uppercase">
                                 BẢN ĐỒ SỐ LỊCH SỬ
                             </h1>
@@ -153,20 +161,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 VIỆT NAM
                             </p>
                         </div>
+                        {/* Mobile Title */}
+                        <div className="md:hidden font-bold text-slate-200">
+                             {mobileSheetState === 'collapsed' ? '' : 'Danh sách kết quả'}
+                        </div>
                     </div>
                     
-                    {/* Desktop Collapse Button */}
-                    <button 
-                        onClick={onToggleCollapse}
-                        className="hidden md:flex p-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-colors"
-                        title="Thu gọn"
-                    >
-                        <ChevronLeftIcon className="w-5 h-5" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                        {/* Removed duplicate mobile expand button */}
+                        
+                        {/* Desktop Collapse Button */}
+                        <button 
+                            onClick={onToggleCollapse}
+                            className="hidden md:flex p-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-colors"
+                            title="Thu gọn"
+                        >
+                            <ChevronLeftIcon className="w-5 h-5" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* --- Filters --- */}
-                <div className="mt-1 md:mt-6 space-y-3">
+                <div className="mt-2 md:mt-6 space-y-3">
                     {/* City Filter */}
                     <div className="relative group">
                         <select 
