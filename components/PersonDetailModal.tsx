@@ -32,9 +32,10 @@ export const PersonDetailModal: React.FC<PersonDetailModalProps> = ({ person, on
         className="
             absolute bottom-0 left-0 w-full bg-slate-800 border-t border-slate-600 shadow-2xl
             pointer-events-auto animate-slide-up
-            rounded-t-2xl overflow-hidden
+            overflow-hidden
             flex flex-col
-            h-[85vh] md:h-auto md:max-h-[85vh] md:max-w-3xl md:relative md:rounded-xl md:border md:shadow-xl
+            h-[100dvh] rounded-none
+            md:h-auto md:max-h-[85vh] md:max-w-3xl md:relative md:rounded-xl md:border md:shadow-xl
         "
       >
         {/* Mobile Drag Handle */}
