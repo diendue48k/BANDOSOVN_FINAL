@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { MapContainer, TileLayer, useMap, Marker, Polyline, useMapEvents, Popup, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import { Site, RouteData } from '../types';
-import { GlobeAltIcon, XIcon, PlusIcon, MinusIcon } from './Icons';
+import { GlobeAltIcon, XIcon, PlusIcon, MinusIcon, ArrowRightIcon, UsersIcon } from './Icons';
 import { SiteDetailContent } from './SiteDetailContent';
 
 // --- Icon Creation & Fixes ---
@@ -174,6 +174,36 @@ const CustomZoomControl = () => {
     )
 }
 
+// Lightweight Popup Content for Persons
+const PersonPopupCard: React.FC<{ site: Site; onViewDetails: () => void }> = ({ site, onViewDetails }) => {
+    return (
+        <div className="bg-[#1e293b] rounded-xl overflow-hidden shadow-2xl border border-slate-700/50 flex flex-col w-full">
+            <div className="relative w-full h-32 bg-slate-800 flex items-center justify-center">
+                 <UsersIcon className="h-16 w-16 text-slate-600" />
+                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
+            </div>
+            
+            <div className="px-4 py-4 flex flex-col space-y-3">
+                <h3 className="font-bold text-sky-400 truncate text-lg leading-tight">{site.site_name}</h3>
+                
+                <div className="min-h-[40px]">
+                   <p className="text-sm text-slate-300 leading-relaxed line-clamp-3">{site.description}</p>
+                </div>
+                
+                <div className="pt-2">
+                    <button
+                        onClick={onViewDetails}
+                        className="w-full flex items-center justify-center text-sm font-bold text-white bg-sky-500 hover:bg-sky-400 transition-all duration-200 py-2 rounded-lg shadow-lg shadow-sky-900/20 active:scale-95"
+                    >
+                        Xem chi tiết 
+                        <ArrowRightIcon className="h-4 w-4 ml-1.5" />
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 interface SiteMarkerProps {
     site: Site;
     isSelected: boolean;
@@ -184,29 +214,31 @@ interface SiteMarkerProps {
 const SiteMarker: React.FC<SiteMarkerProps> = ({ site, isSelected, onSiteSelect, onShowDirections }) => {
     const markerRef = useRef<L.Marker>(null);
     const type = site.site_type;
+    const isPerson = type === 'Nhân vật';
     
     // Memoize icon creation
     const icon = useMemo(() => createMarkerIcon(isSelected, type), [isSelected, type]);
 
-    // Programmatically open popup when selected
-    useEffect(() => {
-        if (isSelected && markerRef.current) {
-            markerRef.current.openPopup();
-        }
-    }, [isSelected]);
-
-    // Only show popup content for Sites. For Persons, we handle click in App.tsx to open the full modal
-    const isPerson = type === 'Nhân vật';
-
+    // If selected via search/sidebar, make sure Popup is OPEN (or just rely on sidebar)
+    // Actually, if selected via sidebar, we show the modal. We might want to animate marker but not necessarily open popup.
+    // However, if the user clicked the marker (double click), selected is true.
+    
     return (
         <Marker
             ref={markerRef}
             position={[site.latitude, site.longitude]}
             icon={icon}
             eventHandlers={{
-                click: () => {
-                    // Always trigger select. App.tsx handles displaying the correct Modal/Sheet
+                click: (e) => {
+                    // Single click: Just open popup. Do NOT select globally yet.
+                    e.originalEvent.stopPropagation();
+                    e.target.openPopup();
+                },
+                dblclick: (e) => {
+                    // Double click: Select globally (open sidebar/modal)
+                    L.DomEvent.stopPropagation(e.originalEvent);
                     onSiteSelect(site);
+                    markerRef.current?.closePopup();
                 }
             }}
         >
@@ -214,25 +246,34 @@ const SiteMarker: React.FC<SiteMarkerProps> = ({ site, isSelected, onSiteSelect,
                 <span className="font-sans font-semibold text-slate-800">{site.site_name}</span>
            </Tooltip>
            
-           {!isPerson && (
-                <Popup 
-                    autoPan={true} 
-                    closeButton={false} 
-                    className="custom-popup"
-                    maxWidth={320}
-                    minWidth={320}
-                >
-                    <div className="relative group">
-                        <button
-                            className="absolute top-2 right-2 z-[60] p-1.5 bg-black/40 hover:bg-black/70 text-white rounded-full transition-all backdrop-blur-sm shadow-md"
-                            onClick={(e) => {
-                                e.stopPropagation();
+           <Popup 
+                autoPan={true} 
+                closeButton={false} 
+                className="custom-popup"
+                maxWidth={320}
+                minWidth={320}
+            >
+                <div className="relative group">
+                    <button
+                        className="absolute top-2 right-2 z-[60] p-1.5 bg-black/40 hover:bg-black/70 text-white rounded-full transition-all backdrop-blur-sm shadow-md"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            markerRef.current?.closePopup();
+                        }}
+                        title="Đóng"
+                    >
+                        <XIcon className="w-4 h-4" />
+                    </button>
+                    
+                    {isPerson ? (
+                        <PersonPopupCard 
+                            site={site} 
+                            onViewDetails={() => {
+                                onSiteSelect(site);
                                 markerRef.current?.closePopup();
                             }}
-                            title="Đóng"
-                        >
-                            <XIcon className="w-4 h-4" />
-                        </button>
+                        />
+                    ) : (
                         <SiteDetailContent 
                             siteId={site.site_id} 
                             isModal={false} 
@@ -241,15 +282,15 @@ const SiteMarker: React.FC<SiteMarkerProps> = ({ site, isSelected, onSiteSelect,
                                 markerRef.current?.closePopup();
                             }}
                             onShowDirections={() => {
-                            if (onShowDirections) {
-                                onShowDirections(site);
-                                markerRef.current?.closePopup();
-                            }
+                                if (onShowDirections) {
+                                    onShowDirections(site);
+                                    markerRef.current?.closePopup();
+                                }
                             }}
                         />
-                    </div>
-                </Popup>
-           )}
+                    )}
+                </div>
+            </Popup>
         </Marker>
     );
 };
