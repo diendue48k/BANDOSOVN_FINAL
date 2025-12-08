@@ -21,7 +21,6 @@ export interface Person {
   birth_year?: number;
   death_year?: number;
   related_city_ids?: (string | number)[];
-  // New fields for map visualization based on birthplace
   latitude?: number;
   longitude?: number;
   location_name?: string;
