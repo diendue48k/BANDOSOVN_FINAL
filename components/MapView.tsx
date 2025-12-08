@@ -23,9 +23,9 @@ const createMarkerIcon = (isSelected: boolean, type: string): L.DivIcon => {
   const isCity = type === 'Thành phố';
   const isPerson = type === 'Nhân vật';
   
-  let color = '#0ea5e9'; // Default Blue for Sites (Sky 500)
-  if (isCity) color = '#9333ea'; // Purple for Cities
-  if (isPerson) color = '#0ea5e9'; // Blue for Persons (Requested: "xanh dương lun") - same as sites
+  let color = '#0ea5e9'; 
+  if (isCity) color = '#9333ea'; 
+  if (isPerson) color = '#0ea5e9'; 
 
   const zIndex = isSelected ? 1000 : (isCity ? 900 : (isPerson ? 800 : 100)); 
 
